@@ -1,21 +1,8 @@
 {
-  "name": "bootstrap-datetime-picker",
-  "homepage": "http://www.malot.fr/bootstrap-datetimepicker/",
-  "description": "Both Date and Time picker widget based on twitter bootstrap",
-  "version": "2.4.4",
+  "name": "yom-bootstrap-datetime-picker",
+  "description": "Fork of bootstrap-datetimepicker.js; Enable seconds selection; Both Date and Time picker widget based on twitter bootstrap",
+  "version": "2.5.0",
   "license": "Apache 2.0",
-  "author": {
-    "name": "Sebastien Malot"
-  },
-  "maintainers": [
-    {
-      "name": "Sebastien Malot"
-    },
-    {
-      "name": "Christian Vaas",
-      "email": "christianvaas@auspex.eu"
-    }
-  ],
   "keywords": [
     "bootstrap",
     "datetime",
@@ -23,10 +10,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/smalot/bootstrap-datetimepicker.git"
+    "url": "git://github.com/webyom/bootstrap-datetimepicker.git"
   },
   "bugs": {
-    "url": "https://github.com/smalot/bootstrap-datetimepicker"
+    "url": "https://github.com/webyom/bootstrap-datetimepicker"
   },
   "main": "./js/bootstrap-datetimepicker.js",
   "devDependencies": {

@@ -1,4 +1,13 @@
 ﻿/* =========================================================
+ * fork of bootstrap-datetimepicker.js
+ * =========================================================
+ * Improvements by Gary Wang
+ * Enable seconds selection
+ *
+ * Project URL : https://github.com/webyom/bootstrap-datetimepicker
+ */
+
+/* =========================================================
  * bootstrap-datetimepicker.js
  * =========================================================
  * Copyright 2012 Stefan Petre
@@ -106,6 +115,7 @@ var Datetimepicker = function (element, options) {
   this.minuteStep = options.minuteStep || this.element.data('minute-step') || 5;
   this.pickerPosition = options.pickerPosition || this.element.data('picker-position') || 'bottom-right';
   this.showMeridian = options.showMeridian || this.element.data('show-meridian') || false;
+  this.showSeconds = options.showSeconds || this.element.data('show-seconds') || false;
   this.initialDate = options.initialDate || new Date();
   this.zIndex = options.zIndex || this.element.data('z-index') || undefined;
   this.title = typeof options.title === 'undefined' ? false : options.title;
@@ -133,7 +143,7 @@ var Datetimepicker = function (element, options) {
     this.formatViewType = this.element.data('formatViewType');
   }
 
-  this.minView = 0;
+  this.minView = -1;
   if ('minView' in options) {
     this.minView = options.minView;
   } else if ('minView' in this.element.data()) {
@@ -141,7 +151,7 @@ var Datetimepicker = function (element, options) {
   }
   this.minView = DPGlobal.convertViewMode(this.minView);
 
-  this.maxView = DPGlobal.modes.length - 1;
+  this.maxView = 4;
   if ('maxView' in options) {
     this.maxView = options.maxView;
   } else if ('maxView' in this.element.data()) {
@@ -285,6 +295,17 @@ var Datetimepicker = function (element, options) {
     if (date < this.startDate || date > this.endDate) {
       res.push('disabled');
     } else if (Math.floor(this.date.getUTCMinutes() / this.minuteStep) === Math.floor(date.getUTCMinutes() / this.minuteStep)) {
+      res.push('active');
+    }
+    return res.concat((render ? render : []));
+  };
+  this.onRenderSecond = function (date) {
+    var render = (options.onRenderSecond || function () { return []; })(date);
+    var res = ['second'];
+    if (typeof render === 'string') {
+      render = [render];
+    }
+    if (this.date.getUTCSeconds() === date.getUTCSeconds()) {
       res.push('active');
     }
     return res.concat((render ? render : []));
@@ -717,6 +738,7 @@ Datetimepicker.prototype = {
       month = d.getUTCMonth(),
       dayMonth = d.getUTCDate(),
       hours = d.getUTCHours(),
+      minutes = d.getUTCMinutes(),
       startYear = this.startDate.getUTCFullYear(),
       startMonth = this.startDate.getUTCMonth(),
       endYear = this.endDate.getUTCFullYear(),
@@ -728,9 +750,11 @@ Datetimepicker.prototype = {
       var formatted = this.getFormattedDate();
       this.setTitle('.datetimepicker-hours', formatted);
       this.setTitle('.datetimepicker-minutes', formatted);
+      this.setTitle('.datetimepicker-seconds', formatted);
     } else {
       this.setTitle('.datetimepicker-hours', dayMonth + ' ' + dates[this.language].months[month] + ' ' + year);
       this.setTitle('.datetimepicker-minutes', dayMonth + ' ' + dates[this.language].months[month] + ' ' + year);
+      this.setTitle('.datetimepicker-seconds', dayMonth + ' ' + dates[this.language].months[month] + ' ' + year);
     }
     this.picker.find('tfoot th.today')
       .text(dates[this.language].today || dates['en'].today)
@@ -782,6 +806,7 @@ Datetimepicker.prototype = {
     }
     this.picker.find('.datetimepicker-days tbody').empty().append(html.join(''));
 
+    // hour
     html = [];
     var txt = '', meridian = '', meridianOld = '';
     var hoursDisabled = this.hoursDisabled || [];
@@ -819,12 +844,13 @@ Datetimepicker.prototype = {
           html.push('</fieldset>');
         }
       } else {
-        txt = i + ':00';
+        txt = (i < 10 ? '0' + i : i) + ':00';
         html.push('<span class="' + classes.join(' ') + '">' + txt + '</span>');
       }
     }
     this.picker.find('.datetimepicker-hours td').html(html.join(''));
 
+    // minute
     html = [];
     txt = '';
     meridian = '';
@@ -842,7 +868,7 @@ Datetimepicker.prototype = {
           if (meridianOld !== '') {
             html.push('</fieldset>');
           }
-          html.push('<fieldset class="minute"><legend>' + hours + ':-- ' + meridian.toUpperCase() + '</legend>');
+          html.push('<fieldset class="minute"><legend>' + (hours < 10 ? '0' + hours : hours) + (this.showSeconds ? ':--:-- ' : ':-- ') + '</legend>');
         }
         meridianOld = meridian;
         html.push('<span class="' + classes.join(' ') + '">' + (i < 10 ? '0' + i : i) + '</span>');
@@ -851,7 +877,7 @@ Datetimepicker.prototype = {
         }
       } else {
         if (i === 0) {
-          html.push('<fieldset class="minute"><legend>' + hours + ':--</legend>');
+          html.push('<fieldset class="minute"><legend>' + (hours < 10 ? '0' + hours : hours) + (this.showSeconds ? ':--:-- ' : ':-- ') + '</legend>');
         }
         txt = i + ':00';
         html.push('<span class="' + classes.join(' ') + '">' + (i < 10 ? '0' + i : i) + '</span>');
@@ -861,6 +887,43 @@ Datetimepicker.prototype = {
       }
     }
     this.picker.find('.datetimepicker-minutes td').html(html.join(''));
+
+    // second
+    if (this.showSeconds) {
+      html = [];
+      txt = '';
+      meridian = '';
+      meridianOld = '';
+      d = new Date(this.viewDate);
+      for (var i = 0; i < 60; i++) {
+        d.setUTCSeconds(i);
+        classes = this.onRenderSecond(d);
+        if (this.showMeridian && dates[this.language].meridiem.length === 2) {
+          meridian = (hours < 12 ? dates[this.language].meridiem[0] : dates[this.language].meridiem[1]);
+          if (meridian !== meridianOld) {
+            if (meridianOld !== '') {
+              html.push('</fieldset>');
+            }
+            html.push('<fieldset class="second"><legend>' + (hours < 10 ? '0' + hours : hours) + ':' + (minutes < 10 ? '0' + minutes : minutes) + ':--</legend>');
+          }
+          meridianOld = meridian;
+          html.push('<span class="' + classes.join(' ') + '">' + (i < 10 ? '0' + i : i) + '</span>');
+          if (i === 59) {
+            html.push('</fieldset>');
+          }
+        } else {
+          if (i === 0) {
+            html.push('<fieldset class="second"><legend>' + (hours < 10 ? '0' + hours : hours) + ':' + (minutes < 10 ? '0' + minutes : minutes) + ':--</legend>');
+          }
+          txt = i + ':00';
+          html.push('<span class="' + classes.join(' ') + '">' + (i < 10 ? '0' + i : i) + '</span>');
+          if (i === 59) {
+            html.push('</fieldset>');
+          }
+        }
+      }
+      this.picker.find('.datetimepicker-seconds td').html(html.join(''));
+    }
 
     var currentYear = this.date.getUTCFullYear();
     var months = this.setTitle('.datetimepicker-months', year)
@@ -1028,7 +1091,7 @@ Datetimepicker.prototype = {
               break;
             case 'prev':
             case 'next':
-              var dir = DPGlobal.modes[this.viewMode].navStep * (target[0].className === 'prev' ? -1 : 1);
+              var dir = DPGlobal.modes[this.viewMode + 1].navStep * (target[0].className === 'prev' ? -1 : 1);
               switch (this.viewMode) {
                 case 0:
                   this.viewDate = this.moveHour(this.viewDate, dir);
@@ -1126,7 +1189,7 @@ Datetimepicker.prototype = {
                 this._setDate(UTCDate(year, month, day, hours, minutes, seconds, 0));
               }
             } else if (target.is('.minute')) {
-              minutes = parseInt(target.text().substr(target.text().indexOf(':') + 1), 10) || 0;
+              minutes = parseInt(target.text(), 10) || 0;
               this.viewDate.setUTCMinutes(minutes);
               this.element.trigger({
                 type: 'changeMinute',
@@ -1135,8 +1198,18 @@ Datetimepicker.prototype = {
               if (this.viewSelect >= 0) {
                 this._setDate(UTCDate(year, month, day, hours, minutes, seconds, 0));
               }
+            } else if (target.is('.second')) {
+              seconds = parseInt(target.text(), 10) || 0;
+              this.viewDate.setUTCSeconds(seconds);
+              this.element.trigger({
+                type: 'changeSecond',
+                date: this.viewDate
+              });
+              if (this.viewSelect >= -1) {
+                this._setDate(UTCDate(year, month, day, hours, minutes, seconds, 0));
+              }
             }
-            if (this.viewMode !== 0) {
+            if (this.viewMode !== (this.showSeconds ? -1 : 0)) {
               var oldViewMode = this.viewMode;
               this.showMode(-1);
               this.fill();
@@ -1217,6 +1290,14 @@ Datetimepicker.prototype = {
     });
     if(date === null)
       this.date = this.viewDate;
+  },
+
+  moveSecond: function (date, dir) {
+    if (!dir) return date;
+    var new_date = new Date(date.valueOf());
+    //dir = dir > 0 ? 1 : -1;
+    new_date.setUTCSeconds(new_date.getUTCSeconds() + dir);
+    return new_date;
   },
 
   moveMinute: function (date, dir) {
@@ -1335,6 +1416,9 @@ Datetimepicker.prototype = {
         } else if (viewMode === 0) {
           newDate = this.moveMinute(this.date, dir);
           newViewDate = this.moveMinute(this.viewDate, dir);
+        } else if (viewMode === -1) {
+          newDate = this.moveSecond(this.date, dir);
+          newViewDate = this.moveSecond(this.viewDate, dir);
         }
         if (this.dateWithinRange(newDate)) {
           this.date = newDate;
@@ -1373,8 +1457,11 @@ Datetimepicker.prototype = {
             newViewDate = this.moveHour(this.viewDate, dir * 4);
           }
         } else if (viewMode === 0) {
-          newDate = this.moveMinute(this.date, dir * 4);
-          newViewDate = this.moveMinute(this.viewDate, dir * 4);
+          newDate = this.moveMinute(this.date, dir * 6);
+          newViewDate = this.moveMinute(this.viewDate, dir * 6);
+        } else if (viewMode === -1) {
+          newDate = this.moveSecond(this.date, dir * 6);
+          newViewDate = this.moveSecond(this.viewDate, dir * 6);
         }
         if (this.dateWithinRange(newDate)) {
           this.date = newDate;
@@ -1386,7 +1473,7 @@ Datetimepicker.prototype = {
         }
         break;
       case 13: // enter
-        if (this.viewMode !== 0) {
+        if (this.viewMode !== -1) {
           var oldViewMode = this.viewMode;
           this.showMode(-1);
           this.fill();
@@ -1424,7 +1511,7 @@ Datetimepicker.prototype = {
 
   showMode: function (dir) {
     if (dir) {
-      var newViewMode = Math.max(0, Math.min(DPGlobal.modes.length - 1, this.viewMode + dir));
+      var newViewMode = Math.max(-1, Math.min(4, this.viewMode + dir));
       if (newViewMode >= this.minView && newViewMode <= this.maxView) {
         this.element.trigger({
           type:        'changeMode',
@@ -1445,8 +1532,8 @@ Datetimepicker.prototype = {
 
      In jquery 1.7.2+ everything works fine.
      */
-    //this.picker.find('>div').hide().filter('.datetimepicker-'+DPGlobal.modes[this.viewMode].clsName).show();
-    this.picker.find('>div').hide().filter('.datetimepicker-' + DPGlobal.modes[this.viewMode].clsName).css('display', 'block');
+    //this.picker.find('>div').hide().filter('.datetimepicker-'+DPGlobal.modes[this.viewMode + 1].clsName).show();
+    this.picker.find('>div').hide().filter('.datetimepicker-' + DPGlobal.modes[this.viewMode + 1].clsName).css('display', 'block');
     this.updateNavArrows();
   },
 
@@ -1466,6 +1553,8 @@ Datetimepicker.prototype = {
         return 'day';
       case 0:
         return 'hour';
+      case -1:
+        return 'minute';
     }
   }
 };
@@ -1514,6 +1603,11 @@ var dates = $.fn.datetimepicker.dates = {
 
 var DPGlobal = {
   modes:            [
+    {
+      clsName: 'seconds',
+      navFnc:  'Minutes',
+      navStep: 1
+    },
     {
       clsName: 'minutes',
       navFnc:  'Hours',
@@ -1843,6 +1937,10 @@ var DPGlobal = {
       case 'hour':
         viewMode = 0;
         break;
+      case -1:
+      case 'minute':
+        viewMode = -1;
+        break;
     }
 
     return viewMode;
@@ -1868,6 +1966,13 @@ var DPGlobal = {
                 '</tfoot>'
 };
 DPGlobal.template = '<div class="datetimepicker">' +
+  '<div class="datetimepicker-seconds">' +
+  '<table class=" table-condensed">' +
+  DPGlobal.headTemplate +
+  DPGlobal.contTemplate +
+  DPGlobal.footTemplate +
+  '</table>' +
+  '</div>' +
   '<div class="datetimepicker-minutes">' +
   '<table class=" table-condensed">' +
   DPGlobal.headTemplate +
@@ -1905,6 +2010,13 @@ DPGlobal.template = '<div class="datetimepicker">' +
   '</div>' +
   '</div>';
 DPGlobal.templateV3 = '<div class="datetimepicker">' +
+  '<div class="datetimepicker-seconds">' +
+  '<table class=" table-condensed">' +
+  DPGlobal.headTemplateV3 +
+  DPGlobal.contTemplate +
+  DPGlobal.footTemplate +
+  '</table>' +
+  '</div>' +
   '<div class="datetimepicker-minutes">' +
   '<table class=" table-condensed">' +
   DPGlobal.headTemplateV3 +

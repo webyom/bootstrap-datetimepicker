@@ -1,2 +1,3 @@
-# Deprecation warning!
-This repository has been deprecated in favour of [this](https://eonasdan.github.io/bootstrap-datetimepicker/).
+Fork of [bootstrap-datetimepicker.js](https://github.com/smalot/bootstrap-datetimepicker)
+
+Enable seconds selection
