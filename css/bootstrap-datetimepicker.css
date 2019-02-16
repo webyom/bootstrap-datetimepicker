@@ -321,6 +321,11 @@
 	height: 26px;
 	line-height: 26px;
 }
+.datetimepicker .datetimepicker-minutes span.minute {
+	width: 14.6%;
+	margin-top: 1px;
+	margin-bottom: 0;
+}
 
 .datetimepicker table tr td span:hover {
 	background: #eeeeee;
